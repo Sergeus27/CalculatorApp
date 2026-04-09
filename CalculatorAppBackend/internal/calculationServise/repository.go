@@ -6,12 +6,12 @@ import (
 
 //Основные методы CRUD- Create, Read. Update, Delete
 
-type CalculationRepository interface {
-	CreateCalculation(calc Calculation) error
-	GetAllCalculation() ([]Calculation, error)
-	GetCalculationByID(id string) (Calculation, error)
-	UpdateCalulation(calc Calculation) error
-	DeleteCalculation(id string) error
+type CalculationRepository interface { //интерфейс для работы с базой данных
+	CreateCalculation(calc Calculation) error          //создает вычисление в базу данных
+	GetAllCalculation() ([]Calculation, error)         //получаем слайс всех вычислений из БД
+	GetCalculationByID(id string) (Calculation, error) //
+	UpdateCalulation(calc Calculation) error           //
+	DeleteCalculation(id string) error                 //
 }
 
 type calcRepository struct {

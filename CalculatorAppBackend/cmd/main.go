@@ -68,28 +68,37 @@ func postCalculations(c echo.Context) error {
 }
 
 func patchCalculations(c echo.Context) error {
-	id := c.Param("id")
+	// 1. Получение id из URL-параметра
+	id := c.Param("id") // ← ВОТ ЗДЕСЬ id передается через URL!
+
+	// 2. Парсинг JSON из тела запроса
 	var req CalculationRequest
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid request"})
 	}
+
+	// 3. Вычисление результата выражения
 	result, err := calculateExpression(req.Expression)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid expression"})
 	}
 
+	// 4. Поиск записи в БД по id
 	var calc Calculation
 	if err := db.First(&calc, "id = ?", id).Error; err != nil {
 		c.JSON(http.StatusBadRequest, map[string]string{"error": "Could not finde expression"})
 	}
 
+	// 5. Обновление полей
 	calc.Expression = req.Expression
 	calc.Result = result
 
+	// 6. Сохранение изменений
 	if err := db.Save(&calc).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, map[string]string{"error": "Could not update calculation"})
 	}
 
+	// 7. Возврат обновленной записи
 	return c.JSON(http.StatusOK, calc)
 	/*
 			for i, calculation := range calculations {
