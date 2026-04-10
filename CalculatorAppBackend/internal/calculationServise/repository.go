@@ -6,7 +6,8 @@ import (
 
 //Основные методы CRUD- Create, Read. Update, Delete
 
-type CalculationRepository interface { //интерфейс для работы с базой данных
+// интерфейс для работы с базой данных
+type CalculationRepository interface {
 	CreateCalculation(calc Calculation) error          //создает вычисление в базу данных
 	GetAllCalculation() ([]Calculation, error)         //получаем слайс всех вычислений из БД
 	GetCalculationByID(id string) (Calculation, error) //

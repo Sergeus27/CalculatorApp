@@ -67,6 +67,7 @@ func postCalculations(c echo.Context) error {
 
 }
 
+// Функция обновляет существующую запись вычисления в базе данных.
 func patchCalculations(c echo.Context) error {
 	// 1. Получение id из URL-параметра
 	id := c.Param("id") // ← ВОТ ЗДЕСЬ id передается через URL!
