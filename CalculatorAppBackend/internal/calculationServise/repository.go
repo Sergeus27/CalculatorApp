@@ -46,5 +46,5 @@ func (r *calcRepository) UpdateCalulation(calc Calculation) error {
 }
 
 func (r *calcRepository) DeleteCalculation(id string) error {
-	return r.db.Delete(&Calculation, "id = ?", id).Error
+	return r.db.Delete(&Calculation{}, "id = ?", id).Error
 }
