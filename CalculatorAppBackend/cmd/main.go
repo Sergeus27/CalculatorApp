@@ -13,22 +13,6 @@ import (
 
 //var calculations = []Calculation{}
 
-func calculateExpression(expression string) (string, error) {
-	expr, err := govaluate.NewEvaluableExpression(expression)
-
-	if err != nil {
-		return "", err //ошибка 2+2a
-	}
-
-	result, err := expr.Evaluate(nil)
-
-	if err != nil {
-		return "", err
-	}
-
-	return fmt.Sprintf("%v", result), nil
-}
-
 //Основные методы ORM - Create, Find, Update, Delete
 
 func getCalculations(c echo.Context) error {

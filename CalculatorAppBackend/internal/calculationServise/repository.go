@@ -1,4 +1,4 @@
-package calculationServise
+package calculationService
 
 import (
 	"gorm.io/gorm"
@@ -10,9 +10,9 @@ import (
 type CalculationRepository interface {
 	CreateCalculation(calc Calculation) error          //создает вычисление в базу данных
 	GetAllCalculation() ([]Calculation, error)         //получаем слайс всех вычислений из БД
-	GetCalculationByID(id string) (Calculation, error) //
-	UpdateCalulation(calc Calculation) error           //
-	DeleteCalculation(id string) error                 //
+	GetCalculationByID(id string) (Calculation, error) //поиск выражения по его id
+	UpdateCalulation(calc Calculation) error           //обновить результат
+	DeleteCalculation(id string) error                 //удалить вчисление по id
 }
 
 type calcRepository struct {

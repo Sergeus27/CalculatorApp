@@ -1,4 +1,4 @@
-package calculationServise
+package calculationService
 
 type Calculation struct { //структура для хранения данных в бд
 	ID         string `gorm:"primaryKey" json:"id"`
