@@ -1,0 +1,168 @@
+package main
+
+import (
+	"fmt"
+	"log"
+	"net/http"
+
+	"github.com/Knetic/govaluate"
+	"github.com/google/uuid"
+	"github.com/labstack/echo"
+	"github.com/labstack/echo/middleware"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
+)
+
+var db *gorm.DB
+
+func initDB() {
+	//data sourse name-источникданных. Строка для подключенгия к БД
+	dsn := "host=localhost user=postgres password=yourpassword dbname=postgres port=5432 sslmode=disable"
+	var err error
+	db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil {
+		log.Fatalf("Could not connect to database: %v", err)
+	}
+
+	if err := db.AutoMigrate(&Calculation{}); err != nil {
+		log.Fatalf("Could not migrate: %v", err)
+	}
+}
+
+type Calculation struct { //структура для хранения данных в бд
+	ID         string `gorm:"primaryKey" json:"id"`
+	Expression string `json:"expression"`
+	Result     string `json:"result"`
+}
+
+type CalculationRequest struct { //структура для запроса на вычисление
+	Expression string `json:"expression"`
+}
+
+//var calculations = []Calculation{}
+
+func calculateExpression(expression string) (string, error) {
+	expr, err := govaluate.NewEvaluableExpression(expression)
+
+	if err != nil {
+		return "", err //ошибка 2+2a
+	}
+
+	result, err := expr.Evaluate(nil)
+
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%v", result), nil
+}
+
+//Основные методы ORM - Create, Find, Update, Delete
+
+func getCalculations(c echo.Context) error {
+	var calculations []Calculation
+
+	if err := db.Find(&calculations).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, map[string]string{"error": "Could not get calculations"})
+	}
+
+	return c.JSON(http.StatusOK, calculations)
+	//return c.JSON(http.StatusOK, calculations)
+}
+
+func postCalculations(c echo.Context) error {
+	var req CalculationRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid request"})
+	}
+
+	result, err := calculateExpression(req.Expression)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid expression"})
+	}
+
+	calc := Calculation{
+		ID:         uuid.NewString(),
+		Expression: req.Expression,
+		Result:     result,
+	}
+
+	if err := db.Create(&calc).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, map[string]string{"error": "Coluld not add calculation"})
+	}
+
+	return c.JSON(http.StatusCreated, calc)
+
+}
+
+func patchCalculations(c echo.Context) error {
+	id := c.Param("id")
+	var req CalculationRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid request"})
+	}
+	result, err := calculateExpression(req.Expression)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid expression"})
+	}
+
+	var calc Calculation
+	if err := db.First(&calc, "id = ?", id).Error; err != nil {
+		c.JSON(http.StatusBadRequest, map[string]string{"error": "Could not finde expression"})
+	}
+
+	calc.Expression = req.Expression
+	calc.Result = result
+
+	if err := db.Save(&calc).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, map[string]string{"error": "Could not update calculation"})
+	}
+
+	return c.JSON(http.StatusOK, calc)
+	/*
+			for i, calculation := range calculations {
+				if calculation.ID == id {
+					calculations[i].Expression = req.Expression
+					calculations[i].Result = result
+					return c.JSON(http.StatusOK, calculations[i])
+				}
+			}
+
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Calculation not found"})
+	*/
+}
+
+func deleteCalculations(c echo.Context) error {
+	id := c.Param("id")
+
+	if err := db.Delete(&Calculation{}, "id = ?", id).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, map[string]string{"error": "Could not delete calculation"})
+	}
+
+	return c.NoContent(http.StatusNoContent)
+	/*
+		for i, calculation := range calculations {
+			if calculation.ID == id {
+				calculations = append(calculations[:i], calculations[i+1:]...)
+				return c.NoContent(http.StatusNoContent)
+			}
+		}
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Calculation not found"})
+	*/
+
+}
+
+func main() {
+	initDB()
+	e := echo.New()
+
+	e.Use(middleware.CORS())
+	e.Use(middleware.Logger())
+
+	e.GET("/calculations", getCalculations)
+	e.POST("/calculations", postCalculations)
+	e.PATCH("/calculations/:id", patchCalculations)
+	e.DELETE("/calculations/:id", deleteCalculations)
+
+	e.Start("localhost:8080")
+}
